@@ -60,7 +60,7 @@ A modular, microservice-based AI system designed to handle real-time speech tran
 - Optional: Deploy to cloud or VPS
 
 Config located at: `.github/workflows/ci.yml`
-## 🧪 How to Run (Locally with Docker)
+## How to Run (Locally with Docker)
 
 ```bash
 # Build all services
