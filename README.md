@@ -1,5 +1,8 @@
 # Agentic AI-Powered Multimodal Assistant (Project U3)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+
 A modular, microservice-based AI system designed to handle real-time speech transcription, natural language processing, dialogue orchestration, and multimodal interaction. Built to scale and deploy with Docker & CI/CD.
 
 ---
