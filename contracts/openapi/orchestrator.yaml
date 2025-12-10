@@ -1,0 +1,413 @@
+openapi: 3.1.0
+info:
+  title: Orchestrator API (Public)
+  version: 1.0.0
+  description: |
+    Single public entrypoint for the Agentic AI system. Proxies to LLM, RAG, TTS, STT, and Analytics.
+    All endpoints live under `/v1/*`. Unless noted (metrics/SSE/WS), requests and responses are JSON.
+servers:
+  - url: https://api.example.com
+security:
+  - bearerAuth: []
+tags:
+  - name: System
+  - name: Chat
+  - name: RAG
+  - name: TTS
+  - name: STT
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    XSessionId:
+      name: X-Session-Id
+      in: header
+      required: true
+      schema: { type: string, description: Stable session identifier (UUID v4 recommended) }
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: true
+      schema: { type: string, description: Per-request id for idempotency and tracing }
+    XCorrelationId:
+      name: X-Correlation-Id
+      in: header
+      required: true
+      schema: { type: string, description: Correlation id propagated to downstream services }
+  schemas:
+    Error:
+      type: object
+      required: [code, message, correlation_id]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object, additionalProperties: true }
+        correlation_id: { type: string }
+      example:
+        code: "bad_request"
+        message: "Missing field: messages"
+        details: { field: "messages" }
+        correlation_id: "02c1be8f-8f79-4c3f-9c8e-5b41a6b4d9e2"
+    Health:
+      type: object
+      properties:
+        status: { type: string, enum: [ok, degraded, fail] }
+        uptime_s: { type: number }
+      example: { status: ok, uptime_s: 1234.56 }
+    Config:
+      type: object
+      additionalProperties: true
+      example:
+        llm_url: "http://llm:8000"
+        rag_url: "http://rag:8000"
+        tts_url: "http://tts:8000"
+        analytics_url: "http://analytics:8000"
+        rag_auto_length_threshold: 180
+    ChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role: { type: string, enum: [user, system, assistant] }
+        content: { type: string }
+    ChatRequest:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/ChatMessage" }
+        use_rag: { type: boolean, default: false }
+        voice: { type: boolean, default: false }
+        top_k: { type: integer, minimum: 1, maximum: 20, default: 5 }
+      example:
+        messages:
+          - role: system
+            content: "You are a helpful assistant."
+          - role: user
+            content: "Summarise the MinIO bucket setup."
+        use_rag: true
+        top_k: 4
+    ChatResponse:
+      type: object
+      required: [text, provider, used_rag]
+      properties:
+        text: { type: string }
+        provider: { type: string, description: "LLM provider used (openai|hf|...)" }
+        used_rag: { type: boolean }
+        provenance:
+          type: array
+          items:
+            type: object
+            properties:
+              text: { type: string }
+              score: { type: number }
+              source_url: { type: string, format: uri }
+              doc_id: { type: string }
+              chunk_id: { type: string }
+      example:
+        text: "MinIO is initialised at startup; an S3 bucket `rag` is created..."
+        provider: "openai"
+        used_rag: true
+        provenance:
+          - text: "MinIO bucket bootstrap script..."
+            score: 0.83
+            source_url: "s3://rag/bootstrap.md"
+            doc_id: "doc-123"
+            chunk_id: "c-01"
+    IngestJson:
+      type: object
+      properties:
+        text: { type: string, description: "Raw text to ingest" }
+        url: { type: string, format: uri, description: "Optional URL to fetch & ingest" }
+        metadata: { type: object, additionalProperties: true }
+      example:
+        text: "This is a design note about our observability stack..."
+        metadata: { project: "Agentic-U3", author: "Mansi" }
+    RetrieveItem:
+      type: object
+      properties:
+        text: { type: string }
+        score: { type: number }
+        source_url: { type: string }
+        doc_id: { type: string }
+        chunk_id: { type: string }
+    RetrieveResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/RetrieveItem" }
+      example:
+        items:
+          - text: "Prometheus scrapes /v1/metrics on each service..."
+            score: 0.91
+            source_url: "s3://docs/obs.md"
+            doc_id: "obs-001"
+            chunk_id: "12"
+    SSEExample:
+      type: string
+      description: Server-Sent Events stream
+      example: |
+        event: llm.token
+        data: {"delta":"MinIO "}
+
+        event: llm.token
+        data: {"delta":"creates "}
+
+        event: llm.done
+        data: {"provider":"openai","model":"gpt-4o-mini","fallback_used":false,"usage":{"prompt_tokens":123,"completion_tokens":45}}
+    TTSStreamExample:
+      type: string
+      example: |
+        event: tts.audio.chunk
+        data: {"idx":0,"chunk":"<base64>"}
+
+        event: tts.audio.chunk
+        data: {"idx":1,"chunk":"<base64>"}
+
+        event: tts.done
+        data: {"voice":"alloy","provider":"elevenlabs","duration_ms":812}
+paths:
+  /v1/health:
+    get:
+      tags: [System]
+      summary: Liveness/health
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+        "500":
+          description: Failure
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /v1/config:
+    get:
+      tags: [System]
+      summary: Current orchestrator configuration (redacted)
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Config" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }
+  /v1/metrics:
+    get:
+      tags: [System]
+      summary: Prometheus metrics exposition
+      description: Text format per Prometheus exposition.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: Metrics text
+          content:
+            text/plain:
+              schema: { type: string }
+              example: |
+                # HELP http_requests_total Total HTTP requests
+                # TYPE http_requests_total counter
+                http_requests_total{path="/v1/chat"} 42
+  /v1/chat:
+    post:
+      tags: [Chat]
+      summary: Chat completion (sync fallback)
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatRequest" }
+      responses:
+        "200":
+          description: Chat response
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatResponse" }
+        "400":
+          description: Bad request
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }
+        "429":
+          description: Rate limited
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }
+        "500":
+          description: Internal error
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }
+  /v1/chat/stream:
+    get:
+      tags: [Chat]
+      summary: Stream chat tokens via SSE
+      description: |
+        Streams `llm.token` and `llm.done` events. Errors are sent as `error` events.
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+        - name: request
+          in: query
+          required: true
+          description: JSON-encoded ChatRequest
+          schema: { type: string, example: '{"messages":[{"role":"user","content":"Hello"}]}' }
+      responses:
+        "200":
+          description: SSE stream of tokens and completion
+          content:
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/SSEExample" }
+        "400":
+          description: Bad request
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }
+  /v1/ingest:
+    post:
+      tags: [RAG]
+      summary: Ingest content (proxy to RAG)
+      description: Accepts either JSON text/URL or multipart files; forwards to RAG ingestion.
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IngestJson" }
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                metadata:
+                  type: string
+                  description: JSON string with metadata
+              required: [file]
+      responses:
+        "202":
+          description: Accepted for ingestion
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [accepted] }
+                  doc_id: { type: string }
+                example: { status: accepted, doc_id: "doc-abc123" }
+        "400":
+          description: Bad request
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }
+  /v1/retrieve:
+    get:
+      tags: [RAG]
+      summary: Retrieve relevant snippets (proxy to RAG)
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+        - name: top_k
+          in: query
+          required: false
+          schema: { type: integer, default: 5, minimum: 1, maximum: 20 }
+        - name: filters
+          in: query
+          description: Filter object (deepObject)
+          style: deepObject
+          explode: true
+          schema:
+            type: object
+            additionalProperties: { type: string }
+      responses:
+        "200":
+          description: Retrieved chunks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RetrieveResponse" }
+  /v1/tts/stream:
+    get:
+      tags: [TTS]
+      summary: Stream TTS audio chunks via SSE
+      description: |
+        Emits `tts.audio.chunk` events with base64-encoded audio chunks and ends with `tts.done`.
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+        - name: text
+          in: query
+          required: true
+          schema: { type: string }
+        - name: voice
+          in: query
+          required: false
+          schema: { type: string, default: alloy }
+        - name: format
+          in: query
+          required: false
+          schema: { type: string, enum: [mp3, wav, ogg], default: mp3 }
+      responses:
+        "200":
+          description: SSE stream of audio
+          content:
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/TTSStreamExample" }
+        "400":
+          description: Bad request
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }
+  /v1/transcribe/ws:
+    get:
+      tags: [STT]
+      summary: WebSocket endpoint (upgrade) for streaming transcription
+      description: |
+        **Non-normative description (WebSocket):**
+        - **Handshake:** `GET /v1/transcribe/ws?session_id=...&correlation_id=...`
+        - **Binary frames (client → server):** PCM16LE or OGG/Opus 16kHz mono audio chunks.
+        - **Text frames (server → client):** JSON envelope `{ "event": string, "data": object }`
+          - `transcript.partial` → `{ "text": "..." , "start_ms": 0, "end_ms": 480 }`
+          - `transcript.final`   → `{ "text": "...", "segments":[{...}] }`
+          - `warning`, `transcript.error`, `pong`
+        - **Ping/Pong:** Client may send `{ "event": "ping" }` as text.
+        **Example server text frames:**
+        {"event":"transcript.partial","data":{"text":"hello wor","start_ms":0,"end_ms":420}}
+        {"event":"transcript.final","data":{"text":"hello world","segments":[{"text":"hello world","start_ms":0,"end_ms":900}]}}
+        {"event":"pong","data":{"ts":1724380000}}
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+      responses:
+        "101":
+          description: Protocol upgrade to WebSocket
+        "400":
+          description: Bad request
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }

@@ -1,0 +1,82 @@
+openapi: 3.0.3
+info:
+  title: Feedback Service API
+  version: "1.0.0"
+paths:
+  /v1/health:
+    get:
+      summary: Health check
+      responses: { "200": { "description": "OK" } }
+  /v1/metrics:
+    get:
+      summary: Prometheus metrics
+      responses: { "200": { "description": "Metrics" } }
+  /v1/feedback/analyze:
+    post:
+      summary: Enqueue session for analysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionBundleRef'
+      responses:
+        "202":
+          description: Accepted for processing
+  /v1/feedback/{session_id}:
+    get:
+      summary: Get computed feedback report
+      parameters:
+        - in: path
+          name: session_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackReport'
+        "404": { description: Not found }
+  /v1/feedback/stream:
+    get:
+      summary: Server-Sent Events stream for feedback-ready notifications
+      parameters:
+        - in: query
+          name: session_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Event stream (SSE) }
+
+components:
+  schemas:
+    SessionBundleRef:
+      type: object
+      properties:
+        session_id: { type: string }
+        corr_id: { type: string }
+        transcript_uri: { type: string, nullable: true }
+        audio_uri: { type: string, nullable: true }
+        consent_audio_analytics: { type: boolean }
+      required: [session_id]
+    FeedbackScores:
+      type: object
+      properties:
+        overall: { type: number }
+        prosody: { type: number }
+        clarity: { type: number }
+        etiquette: { type: number }
+    FeedbackReport:
+      type: object
+      properties:
+        session_id: { type: string }
+        scores: { $ref: '#/components/schemas/FeedbackScores' }
+        tips:
+          type: array
+          items: { type: string }
+        summary_md: { type: string }
+        report_json: { type: object }
+        report_url_md: { type: string, nullable: true }
+        report_url_pdf: { type: string, nullable: true }

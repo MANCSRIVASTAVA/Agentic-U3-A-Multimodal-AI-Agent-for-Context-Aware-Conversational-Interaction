@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "microservices"
+    metrics_path: /v1/metrics
+    static_configs:
+      - targets:
+          - orchestrator:8000
+          - rag:8000
+          - llm:8000
+          - stt:8000
+          - tts:8000
+          - analytics:8000

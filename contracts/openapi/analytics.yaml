@@ -1,0 +1,130 @@
+openapi: 3.1.0
+info:
+  title: Analytics Service API (Private)
+  version: 1.0.0
+  description: Capture product/UX events and compute session summaries (ClickHouse-backed).
+servers:
+  - url: http://analytics:8000
+security:
+  - bearerAuth: []
+tags:
+  - name: System
+  - name: Analytics
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    XSessionId: { name: X-Session-Id, in: header, required: true, schema: { type: string } }
+    XRequestId: { name: X-Request-Id, in: header, required: true, schema: { type: string } }
+    XCorrelationId: { name: X-Correlation-Id, in: header, required: true, schema: { type: string } }
+  schemas:
+    Error:
+      type: object
+      required: [code, message, correlation_id]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object, additionalProperties: true }
+        correlation_id: { type: string }
+    AnalyticsEvent:
+      $ref: "../schemas/analytics_event.json"
+    SummaryResponse:
+      type: object
+      properties:
+        session_id: { type: string }
+        totals:
+          type: object
+          properties:
+            turns: { type: integer }
+            prompt_tokens: { type: number }
+            completion_tokens: { type: number }
+            audio_seconds: { type: number }
+        latencies_ms:
+          type: object
+          properties:
+            first_token_p50: { type: number }
+            first_token_p95: { type: number }
+            turn_p50: { type: number }
+            turn_p95: { type: number }
+        fallbacks:
+          type: object
+          properties:
+            llm: { type: integer }
+            tts: { type: integer }
+            stt: { type: integer }
+      example:
+        session_id: "a2f2c1d4-349c-4e7d-8a6f-9f8f9a8adc11"
+        totals: { turns: 5, prompt_tokens: 640, completion_tokens: 420, audio_seconds: 31.5 }
+        latencies_ms: { first_token_p50: 420, first_token_p95: 980, turn_p50: 2100, turn_p95: 4300 }
+        fallbacks: { llm: 1, tts: 0, stt: 0 }
+paths:
+  /v1/events:
+    post:
+      tags: [Analytics]
+      summary: Ingest a single analytics event (idempotent by session_id+correlation_id+type)
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AnalyticsEvent" }
+            examples:
+              llm_done:
+                value:
+                  session_id: "sess-123"
+                  correlation_id: "corr-abc"
+                  type: "llm_done"
+                  ts: "2025-08-23T08:10:12Z"
+                  latencies: { first_token_ms: 420, total_ms: 2100 }
+                  usage: { prompt_tokens: 128, completion_tokens: 64 }
+                  flags: { fallback_used: 0 }
+                  labels: { provider: "openai", model: "gpt-4o" }
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [accepted] }
+                  event_id: { type: string }
+                example: { status: accepted, event_id: "md5(sess-123|corr-abc|llm_done)" }
+        "400":
+          description: Bad request
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }
+  /v1/summary:
+    get:
+      tags: [Analytics]
+      summary: Compute session summary aggregates
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+        - name: session_id
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Aggregated summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SummaryResponse" }
+  /v1/metrics:
+    get:
+      tags: [System]
+      summary: Prometheus metrics
+      security: []
+      parameters: [ { $ref: "#/components/parameters/XRequestId" } ]
+      responses:
+        "200":
+          description: Text
+          content:
+            text/plain:
+              schema: { type: string }
+              example: "ai_events_ingested_total{type=\"llm_done\"} 10"

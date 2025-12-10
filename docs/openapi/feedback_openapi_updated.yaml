@@ -1,0 +1,37 @@
+openapi: 3.1.0
+info:
+  title: Feedback Service
+  version: 1.0.0
+paths:
+  /openapi.json:
+    get:
+      summary: Get Openapi
+      operationId: get_openapi_openapi_json_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /docs:
+    get:
+      summary: Get Docs
+      operationId: get_docs_docs_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/html:
+              schema:
+                type: string
+  /health:
+    get:
+      summary: Health
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+

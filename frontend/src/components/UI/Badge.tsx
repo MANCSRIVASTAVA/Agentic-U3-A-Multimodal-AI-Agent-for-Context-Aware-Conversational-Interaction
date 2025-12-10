@@ -1,0 +1,1 @@
+export function Badge({children}:{children:any}){ return <span className='badge'>{children}</span> }

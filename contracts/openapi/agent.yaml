@@ -1,0 +1,226 @@
+openapi: 3.1.0
+info:
+  title: Agent Service API (Private)
+  version: 1.0.0
+  description: |
+    Planning & tool-use brain. Streams structured events while executing plans.
+servers:
+  - url: http://agent:8000
+security:
+  - bearerAuth: []
+tags:
+  - name: System
+  - name: Agent
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    XSessionId:
+      name: X-Session-Id
+      in: header
+      required: true
+      schema: { type: string }
+    XRequestId:
+      name: X-Request-Id
+      in: header
+      required: true
+      schema: { type: string }
+    XCorrelationId:
+      name: X-Correlation-Id
+      in: header
+      required: true
+      schema: { type: string }
+  schemas:
+    Error:
+      type: object
+      required: [code, message, correlation_id]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object, additionalProperties: true }
+        correlation_id: { type: string }
+    DecideRequest:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items:
+            type: object
+            required: [role, content]
+            properties:
+              role: { type: string, enum: [user, system, assistant] }
+              content: { type: string }
+        policy:
+          type: object
+          properties:
+            force_rag: { type: boolean, default: false }
+            max_tool_calls: { type: integer, default: 6 }
+      example:
+        messages:
+          - role: user
+            content: "Summarise the Grafana setup."
+        policy: { force_rag: true }
+    DecideResponse:
+      type: object
+      properties:
+        plan:
+          type: array
+          items:
+            type: object
+            properties:
+              step: { type: string }
+              tool: { type: string }
+              args: { type: object, additionalProperties: true }
+      example:
+        plan:
+          - step: "retrieve"
+            tool: "rag.retrieve"
+            args: { q: "Grafana setup", top_k: 3 }
+          - step: "answer"
+            tool: "llm.generate"
+            args: { temperature: 0.2 }
+    ExecuteRequest:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items:
+            type: object
+            required: [role, content]
+            properties:
+              role: { type: string, enum: [user, system, assistant] }
+              content: { type: string }
+        policy:
+          type: object
+          properties:
+            force_rag: { type: boolean }
+            max_tool_calls: { type: integer, default: 6 }
+            voice: { type: boolean, default: false }
+      example:
+        messages:
+          - role: user
+            content: "Explain how rate limiting works in our Orchestrator."
+        policy: { force_rag: false, voice: false }
+    SSEExample:
+      type: string
+      example: |
+        event: agent.plan
+        data: {"steps":[{"step":"retrieve","tool":"rag.retrieve","args":{"q":"rate limiting","top_k":3}}]}
+
+        event: agent.tool_call
+        data: {"name":"rag.retrieve","args":{"q":"rate limiting"},"call_id":"t1"}
+
+        event: agent.tool_result
+        data: {"call_id":"t1","status":"ok","payload":{"items":[{"text":"Redis token bucket ..."}]},"latency_ms":120}
+
+        event: llm.token
+        data: {"delta":"Rate "}
+
+        event: llm.done
+        data: {"provider":"openai","model":"gpt-4o-mini","fallback_used":false,"usage":{"prompt_tokens":88,"completion_tokens":32}}
+
+        event: agent.done
+        data: {"used_rag":true,"tools_invoked":["rag.retrieve","llm.generate"],"fallback_used":false,"duration_ms":712}
+paths:
+  /v1/agent/decide:
+    post:
+      tags: [Agent]
+      summary: Produce a plan without execution
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DecideRequest" }
+      responses:
+        "200":
+          description: Planned steps
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DecideResponse" }
+        "400":
+          description: Bad request
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }
+  /v1/agent/execute:
+    post:
+      tags: [Agent]
+      summary: Execute a plan with streaming events (SSE)
+      description: Streams structured events: `agent.plan`, `agent.tool_call`, `agent.tool_result`, `llm.token`, `llm.done`, `agent.done`, `error`.
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExecuteRequest" }
+      responses:
+        "200":
+          description: SSE stream of planning/execution
+          content:
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/SSEExample" }
+        "400":
+          description: Bad request
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }
+  /v1/health:
+    get:
+      tags: [System]
+      summary: Health
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, enum: [ok, degraded, fail] }
+                example: { status: ok }
+  /v1/config:
+    get:
+      tags: [System]
+      summary: Config (redacted)
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  tools: ["rag.retrieve","llm.generate","tts.speak","analytics.track"]
+                  limits: { max_tool_calls: 6, stall_timeout_ms: 2000 }
+  /v1/metrics:
+    get:
+      tags: [System]
+      summary: Prometheus metrics
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
+      responses:
+        "200":
+          description: Text exposition
+          content:
+            text/plain:
+              schema: { type: string }
+              example: |
+                agent_requests_total{mode="execute"} 12

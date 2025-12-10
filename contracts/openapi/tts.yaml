@@ -1,0 +1,136 @@
+openapi: 3.1.0
+info:
+  title: TTS Service API (Private)
+  version: 1.0.0
+  description: Text-to-speech synthesis with streaming and non-streaming modes.
+servers:
+  - url: http://tts:8000
+security:
+  - bearerAuth: []
+tags:
+  - name: System
+  - name: TTS
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    XSessionId: { name: X-Session-Id, in: header, required: true, schema: { type: string } }
+    XRequestId: { name: X-Request-Id, in: header, required: true, schema: { type: string } }
+    XCorrelationId: { name: X-Correlation-Id, in: header, required: true, schema: { type: string } }
+  schemas:
+    Error:
+      type: object
+      required: [code, message, correlation_id]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object, additionalProperties: true }
+        correlation_id: { type: string }
+    SynthesizeRequest:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string }
+        voice: { type: string, default: alloy }
+        format: { type: string, enum: [mp3, wav, ogg], default: mp3 }
+      example:
+        text: "Hello from Agentic U3."
+        voice: "alloy"
+        format: "mp3"
+    SSEExample:
+      type: string
+      example: |
+        event: tts.audio.chunk
+        data: {"idx":0,"chunk":"<base64>"}
+
+        event: tts.audio.chunk
+        data: {"idx":1,"chunk":"<base64>"}
+
+        event: tts.done
+        data: {"voice":"alloy","provider":"elevenlabs","duration_ms":654}
+paths:
+  /v1/synthesize:
+    post:
+      tags: [TTS]
+      summary: Non-streaming synthesis (binary audio)
+      description: Returns the full audio file as the response body.
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SynthesizeRequest" }
+      responses:
+        "200":
+          description: Audio file
+          content:
+            audio/mpeg: { schema: { type: string, format: binary } }
+            audio/wav:  { schema: { type: string, format: binary } }
+            audio/ogg:  { schema: { type: string, format: binary } }
+        "400":
+          description: Bad request
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }
+  /v1/tts/stream:
+    get:
+      tags: [TTS]
+      summary: Stream audio chunks via SSE
+      description: SSE events `tts.audio.chunk` followed by `tts.done`.
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+        - name: text
+          in: query
+          required: true
+          schema: { type: string }
+        - name: voice
+          in: query
+          required: false
+          schema: { type: string, default: alloy }
+        - name: format
+          in: query
+          required: false
+          schema: { type: string, enum: [mp3, wav, ogg], default: mp3 }
+      responses:
+        "200":
+          description: SSE audio
+          content:
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/SSEExample" }
+  /v1/health:
+    get:
+      tags: [System]
+      summary: Health
+      security: []
+      parameters: [ { $ref: "#/components/parameters/XRequestId" } ]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json: { schema: { type: object, example: { status: ok } } }
+  /v1/config:
+    get:
+      tags: [System]
+      summary: Config (voices, provider)
+      parameters: [ { $ref: "#/components/parameters/XSessionId" }, { $ref: "#/components/parameters/XRequestId" }, { $ref: "#/components/parameters/XCorrelationId" } ]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, example: { provider: "elevenlabs", default_voice: "alloy" } }
+  /v1/metrics:
+    get:
+      tags: [System]
+      summary: Prometheus metrics
+      security: []
+      parameters: [ { $ref: "#/components/parameters/XRequestId" } ]
+      responses:
+        "200":
+          description: Text
+          content:
+            text/plain: { schema: { type: string }, example: "tts_requests_total 7" }

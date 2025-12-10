@@ -1,0 +1,35 @@
+openapi: 3.1.0
+info:
+  title: STT Service Enriched
+  version: '1.0'
+paths:
+  /v1/health:
+    get:
+      summary: Health
+      operationId: health_v1_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /v1/config:
+    get:
+      summary: Config
+      operationId: config_v1_config_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /v1/metrics:
+    get:
+      summary: Metrics
+      operationId: metrics_v1_metrics_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}

@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/analytics_event.json",
+  "title": "AnalyticsEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "session_id",
+    "correlation_id",
+    "type",
+    "ts"
+  ],
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "Stable session identifier (UUID or app-defined key)",
+      "examples": [
+        "sess-123",
+        "a2f2c1d4-349c-4e7d-8a6f-9f8f9a8adc11"
+      ]
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Correlation/trace id propagated across services",
+      "examples": [
+        "corr-abc",
+        "02c1be8f-8f79-4c3f-9c8e-5b41a6b4d9e2"
+      ]
+    },
+    "type": {
+      "type": "string",
+      "description": "Event type (e.g., llm_done, turn_complete, tts_done, stt_segment, error)"
+    },
+    "ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Event timestamp in RFC 3339 / ISO 8601",
+      "examples": [
+        "2025-08-23T08:10:12Z"
+      ]
+    },
+    "latencies": {
+      "type": "object",
+      "description": "Latency metrics in milliseconds",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "examples": [
+        {
+          "first_token_ms": 420,
+          "total_ms": 2100
+        }
+      ]
+    },
+    "usage": {
+      "type": "object",
+      "description": "Usage counters (tokens, chars, seconds, etc.)",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "examples": [
+        {
+          "prompt_tokens": 128,
+          "completion_tokens": 64,
+          "audio_seconds": 12.3
+        }
+      ]
+    },
+    "flags": {
+      "type": "object",
+      "description": "Boolean-like flags encoded as 0/1 (e.g., fallback_used)",
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "examples": [
+        {
+          "fallback_used": 0,
+          "voice": 1
+        }
+      ]
+    },
+    "labels": {
+      "type": "object",
+      "description": "String labels (provider, model, voice, tool names, etc.)",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "examples": [
+        {
+          "provider": "openai",
+          "model": "gpt-4o",
+          "voice": "alloy"
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "session_id": "sess-123",
+      "correlation_id": "corr-abc",
+      "type": "llm_done",
+      "ts": "2025-08-23T08:10:12Z",
+      "latencies": {
+        "first_token_ms": 420,
+        "total_ms": 2100
+      },
+      "usage": {
+        "prompt_tokens": 128,
+        "completion_tokens": 64
+      },
+      "flags": {
+        "fallback_used": 0
+      },
+      "labels": {
+        "provider": "openai",
+        "model": "gpt-4o"
+      }
+    },
+    {
+      "session_id": "sess-123",
+      "correlation_id": "corr-abc",
+      "type": "turn_complete",
+      "ts": "2025-08-23T08:10:20Z",
+      "latencies": {
+        "turn_ms": 2750
+      },
+      "usage": {
+        "words": 86,
+        "audio_seconds": 6.5
+      },
+      "flags": {
+        "voice": 1
+      },
+      "labels": {
+        "route": "agent",
+        "used_rag": "true"
+      }
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm
+  namespace: agentic-ai
+  labels:
+    app: llm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llm
+  template:
+    metadata:
+      labels:
+        app: llm
+    spec:
+      containers:
+      - name: llm
+        image: llm:latest
+        imagePullPolicy: Never  # For local development
+        ports:
+        - containerPort: 8000
+        env:
+        - name: SERVICE_NAME
+          value: "llm"
+        - name: PORT
+          value: "8000"
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: llm-secrets
+              key: OPENAI_API_KEY
+              optional: true
+        - name: HF_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: llm-secrets
+              key: HF_API_KEY
+              optional: true
+        envFrom:
+        - configMapRef:
+            name: app-config
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm
+  namespace: agentic-ai
+spec:
+  selector:
+    app: llm
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: llm-secrets
+  namespace: agentic-ai
+type: Opaque
+data:
+  # Base64 encoded values - replace with actual API keys
+  # echo -n "your-openai-api-key" | base64
+  OPENAI_API_KEY: ""
+  # echo -n "your-hf-api-key" | base64  
+  HF_API_KEY: ""

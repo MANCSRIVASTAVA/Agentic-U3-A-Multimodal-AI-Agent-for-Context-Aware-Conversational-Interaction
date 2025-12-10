@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info:
+  title: Sentiment Service API
+  version: 1.0.0
+  description: Text sentiment/emotion analysis with style directives. Prosody optional later.
+servers:
+  - url: http://localhost:8700
+    description: Local (host → container 8000)
+paths:
+  /v1/health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /v1/metrics:
+    get:
+      summary: Prometheus metrics
+      responses:
+        '200':
+          description: Prom exposition
+  /v1/analyze:
+    post:
+      summary: Analyze text (and optional prosody) and return style directives
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyzeRequest'
+            examples:
+              basic:
+                value:
+                  text: "I already tried this and it didn't work."
+                  features: ["sentiment","emotion"]
+                  return_style: true
+      responses:
+        '200':
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyzeResponse'
+components:
+  schemas:
+    Prosody:
+      type: object
+      properties:
+        pitch_hz: { type: number, example: 240.5 }
+        energy_rms: { type: number, example: 0.62 }
+        speech_rate_wps: { type: number, example: 3.2 }
+    AnalyzeRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+        features:
+          type: array
+          items: { type: string, enum: ["sentiment","emotion","tone"] }
+        prosody:
+          $ref: '#/components/schemas/Prosody'
+        return_style:
+          type: boolean
+          default: true
+    StyleDirectives:
+      type: object
+      properties:
+        style_enum:
+          type: string
+          enum: [calm, warm, concise, neutral]
+        system_instructions:
+          type: string
+    AnalyzeResponse:
+      type: object
+      properties:
+        sentiment:
+          type: string
+          enum: [positive, neutral, negative]
+        emotion:
+          type: string
+          enum: [anger, joy, sadness, fear, disgust, surprise, neutral]
+        valence:
+          type: number
+        arousal:
+          type: number
+        confidence:
+          type: number
+        style_directives:
+          $ref: '#/components/schemas/StyleDirectives'
+        meta:
+          type: object
+          additionalProperties: true

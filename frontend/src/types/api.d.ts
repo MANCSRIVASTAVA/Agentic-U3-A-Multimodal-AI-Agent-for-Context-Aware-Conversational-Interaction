@@ -1,0 +1,1 @@
+export type Health = { status: string; timestamp: number }; export type Config = { name: string; features: Record<string, boolean>, models?: Record<string, string> }

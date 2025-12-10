@@ -1,0 +1,1 @@
+export const newCorrelation = ()=> crypto.randomUUID()

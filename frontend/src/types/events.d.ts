@@ -1,0 +1,1 @@
+export type LlmTokenEvent = { event: 'llm.token'; data: string }; export type LlmDoneEvent = { event: 'llm.done'; data: { fallback_used?: boolean } }; export type TtsChunkEvent = { event: 'tts.audio.chunk'; data: any }; export type TtsDoneEvent = { event: 'tts.done'; data: any }; export type ErrorEvent = { event: 'error'; data: string }

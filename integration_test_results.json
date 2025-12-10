@@ -1,0 +1,107 @@
+{
+  "overall_success": true,
+  "total_duration": 1.3262832164764404,
+  "test_results": {
+    "health": {
+      "orchestrator": true,
+      "analytics": true,
+      "llm": true,
+      "stt": true,
+      "tts": true,
+      "rag": true,
+      "frontend": true
+    },
+    "orchestrator_chat": {
+      "status_code": 200,
+      "response": {
+        "text": "",
+        "used_rag": false,
+        "provider": null
+      },
+      "success": true
+    },
+    "llm_generation": {
+      "status_code": 200,
+      "success": true,
+      "response_length": 216
+    },
+    "tts_synthesis": {
+      "status_code": 200,
+      "success": true,
+      "content_type": "text/event-stream; charset=utf-8",
+      "response_length": 46796
+    },
+    "analytics": {
+      "status_code": 200,
+      "success": true,
+      "data": {
+        "session_id": "integration_test",
+        "event_count": 0,
+        "by_type": {},
+        "avg_latencies": {},
+        "fallback_used": 0,
+        "wpm": null,
+        "usage_totals": {}
+      }
+    },
+    "rag": {
+      "status_code": 200,
+      "success": true,
+      "health_status": {
+        "status": "ok",
+        "service": "rag"
+      }
+    },
+    "frontend": {
+      "status_code": 200,
+      "success": true,
+      "content_type": "text/html",
+      "response_length": 401
+    },
+    "metrics": {
+      "orchestrator": {
+        "success": true,
+        "content_length": 2592,
+        "has_prometheus_format": true
+      },
+      "analytics": {
+        "success": true,
+        "content_length": 1813,
+        "has_prometheus_format": true
+      },
+      "llm": {
+        "success": true,
+        "content_length": 1330,
+        "has_prometheus_format": true
+      },
+      "stt": {
+        "success": true,
+        "content_length": 1904,
+        "has_prometheus_format": true
+      },
+      "tts": {
+        "success": true,
+        "content_length": 3742,
+        "has_prometheus_format": true
+      },
+      "rag": {
+        "success": true,
+        "content_length": 3462,
+        "has_prometheus_format": true
+      }
+    },
+    "stt_websocket": {
+      "success": true,
+      "response": {
+        "event": "pong",
+        "ts": 1757443798.6707542
+      }
+    }
+  },
+  "summary": {
+    "services_healthy": 7,
+    "total_services": 7,
+    "successful_tests": 9,
+    "total_tests": 8
+  }
+}

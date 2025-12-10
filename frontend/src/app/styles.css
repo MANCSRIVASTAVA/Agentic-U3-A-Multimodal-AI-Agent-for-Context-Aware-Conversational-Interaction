@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset */
+* { box-sizing: border-box }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  overflow: hidden;
+  background-color: #343541; /* ChatGPT main bg */
+  color: #ececf1;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* === Layout === */
+.page { @apply h-screen flex flex-col; background-color: #343541; }
+
+/* Top header bar */
+.header {
+  @apply sticky top-0 z-10;
+  background: #343541;
+  border-bottom: 1px solid #2a2b32;
+}
+
+/* Grid wrapper: sidebar + chat card */
+.main-grid {
+  @apply flex-1 grid gap-4 px-4 sm:px-6 pb-6;
+  grid-template-columns: 280px 1fr; /* sidebar | chat */
+}
+
+/* Left card (sidebar) */
+.sidebar {
+  @apply rounded-2xl p-3 h-full flex flex-col;
+  background-color: #202123; /* darker panel */
+  border: 1px solid #2a2b32;
+}
+
+/* Right card (chat) */
+.center {
+  @apply rounded-2xl h-full flex flex-col;
+  background-color: #343541; /* main bg tone */
+  border: 1px solid #2a2b32;
+}
+
+/* === Chat Panel internals === */
+.chat-shell { @apply flex flex-col h-full; }
+.chat-scroll { @apply flex-1 overflow-y-auto p-4 sm:p-6 space-y-4; }
+.chat-composer {
+  @apply p-3 sm:p-4 flex items-center gap-2;
+  background: #40414f;
+  border-top: 1px solid #2a2b32;
+  border-bottom-left-radius: 1rem;
+  border-bottom-right-radius: 1rem;
+}
+
+/* === Message Bubbles === */
+.msg {
+  @apply max-w-[88%] md:max-w-[75%] rounded-2xl px-3 py-2 text-[0.95rem] leading-relaxed shadow;
+}
+
+/* User bubble: ChatGPT green */
+.msg-user {
+  background-color: #10a37f; /* green */
+  color: #ffffff;
+  border-radius: 12px;
+  margin-left: auto;
+}
+
+/* Assistant bubble: dark slate */
+.msg-ai {
+  background-color: #444654;
+  color: #ececf1;
+  border-radius: 12px;
+}
+
+/* Markdown / Code blocks */
+.md { @apply prose prose-invert max-w-none; }
+.md pre {
+  @apply overflow-x-auto rounded-xl p-3 text-sm;
+  background: #202123 !important;
+  border: 1px solid #565869;
+}
+.md code { @apply font-mono text-sm; }
+
+/* Inputs */
+.input {
+  @apply w-full rounded-xl px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2;
+  background: #40414f;
+  border: 1px solid #565869;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+/* Buttons */
+.btn { @apply rounded-lg px-3 py-2 text-sm font-medium transition-colors; }
+.btn-primary {
+  background-color: #5436da; /* purple send */
+  color: #ffffff;
+}
+.btn-primary:hover { background-color: #6751e0; }
+.btn-icon {
+  @apply p-2 rounded-full transition;
+  color: #aeb1b7;
+}
+.btn-icon:hover { background-color: #2a2b32; }
+
+/* Typing indicator */
+.typing-dots { display: inline-flex; gap: 4px; }
+.typing-dots span {
+  width: 6px; height: 6px;
+  background: #aeb1b7;
+  border-radius: 50%;
+  animation: bounce 1.2s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+

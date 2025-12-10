@@ -1,0 +1,1 @@
+terminal_health_screenshots.sh

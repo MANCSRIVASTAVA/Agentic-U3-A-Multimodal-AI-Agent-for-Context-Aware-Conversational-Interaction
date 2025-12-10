@@ -1,0 +1,49 @@
+{
+  "overall_success": true,
+  "total_duration": 0.27944302558898926,
+  "test_results": {
+    "frontend_accessibility": {
+      "success": true,
+      "status_code": 200,
+      "content_type": "text/html",
+      "response_size": 401
+    },
+    "api_proxy_connectivity": {
+      "success": true,
+      "status_code": 200,
+      "response": {
+        "status": "ok"
+      }
+    },
+    "chat_workflow": {
+      "success": true,
+      "status_code": 200,
+      "response": {
+        "text": "",
+        "used_rag": false,
+        "provider": null
+      }
+    },
+    "direct_orchestrator": {
+      "success": true,
+      "status_code": 200,
+      "response": {
+        "status": "ok"
+      }
+    },
+    "cors_headers": {
+      "success": true,
+      "status_code": 200,
+      "cors_headers": {
+        "access_control_allow_origin": "http://localhost:3000",
+        "access_control_allow_methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT",
+        "access_control_allow_headers": "Content-Type"
+      },
+      "cors_working": true
+    }
+  },
+  "summary": {
+    "successful_tests": 5,
+    "total_tests": 5
+  }
+}

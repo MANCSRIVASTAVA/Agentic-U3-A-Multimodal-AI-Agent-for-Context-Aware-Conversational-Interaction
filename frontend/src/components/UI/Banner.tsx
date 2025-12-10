@@ -1,0 +1,1 @@
+export function Banner({text, kind='info'}:{text:string, kind?:'info'|'success'|'error'}){ return <div className={kind==='success'?'banner success':kind==='error'?'banner error':'banner'}>{text}</div> }

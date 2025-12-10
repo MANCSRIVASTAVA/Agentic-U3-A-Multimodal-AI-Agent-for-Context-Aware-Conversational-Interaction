@@ -1,0 +1,38 @@
+# ENV files
+.env
+.env.*
+*.env
+backend/**/.env
+frontend/.env
+data/.env.data
+
+# Databases
+grafana.db
+*.db
+*.sqlite
+
+# Node
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+
+# Python caches
+__pycache__/
+*.pyc
+
+# macOS trash files
+.DS_Store
+
+# Screenshots
+screenshots/
+
+# Logs
+*.log
+
+# Build artifacts
+*.tsbuildinfo
+
+# Docker
+*.pid
+

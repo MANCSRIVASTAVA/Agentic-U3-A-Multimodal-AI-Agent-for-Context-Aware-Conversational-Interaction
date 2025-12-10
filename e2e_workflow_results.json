@@ -1,0 +1,100 @@
+{
+  "overall_success": true,
+  "total_duration": 4.380143880844116,
+  "workflows": {
+    "chat_conversation": {
+      "success": true,
+      "initial_response": {
+        "text": "",
+        "used_rag": false,
+        "provider": null
+      },
+      "followup_response": {
+        "text": "",
+        "used_rag": false,
+        "provider": null
+      },
+      "session_id": "e2e_test_1757443811"
+    },
+    "llm_generation": {
+      "success": true,
+      "status_code": 200,
+      "response_length": 216,
+      "content": "event: error\ndata: {\"code\": \"HF_GENERATE_FAIL\", \"message\": \"402: {\\\"error\\\":\\\"You have exceeded your monthly included credits for Inference Providers. Subscribe to PRO to get 20x more monthly included"
+    },
+    "tts_synthesis": {
+      "success": true,
+      "status_code": 200,
+      "content_type": "text/event-stream; charset=utf-8",
+      "response_size": 66764
+    },
+    "analytics_data_flow": {
+      "success": true,
+      "status_code": 200,
+      "analytics_data": {
+        "session_id": "e2e_test_1757443811",
+        "event_count": 0,
+        "by_type": {},
+        "avg_latencies": {},
+        "fallback_used": 0,
+        "wpm": null,
+        "usage_totals": {}
+      }
+    },
+    "rag_integration": {
+      "success": true,
+      "status_code": 200,
+      "rag_status": {
+        "status": "ok",
+        "service": "rag"
+      }
+    },
+    "frontend_backend_integration": {
+      "success": true,
+      "frontend_status": 200,
+      "api_proxy_status": 200,
+      "frontend_size": 401
+    },
+    "metrics_collection": {
+      "success": true,
+      "metrics_status": {
+        "orchestrator": {
+          "success": true,
+          "has_prometheus_format": true,
+          "content_length": 2579
+        },
+        "analytics": {
+          "success": true,
+          "has_prometheus_format": true,
+          "content_length": 1812
+        },
+        "llm": {
+          "success": true,
+          "has_prometheus_format": true,
+          "content_length": 1330
+        },
+        "tts": {
+          "success": true,
+          "has_prometheus_format": true,
+          "content_length": 3729
+        },
+        "rag": {
+          "success": true,
+          "has_prometheus_format": true,
+          "content_length": 3462
+        }
+      }
+    },
+    "stt_websocket": {
+      "success": true,
+      "response": {
+        "event": "pong",
+        "ts": 1757443815.4506135
+      }
+    }
+  },
+  "summary": {
+    "successful_workflows": 8,
+    "total_workflows": 8
+  }
+}

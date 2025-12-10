@@ -1,0 +1,115 @@
+{
+  "dashboard": {
+    "title": "Microservices Dashboard - Working",
+    "tags": ["microservices", "working"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Service Health Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up",
+            "refId": "A",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 24, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Memory Usage by Service",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes",
+            "refId": "A",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}
+      },
+      {
+        "id": 3,
+        "title": "CPU Usage by Service",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total[5m]) * 100",
+            "refId": "A",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}
+      },
+      {
+        "id": 4,
+        "title": "Open File Descriptors",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "process_open_fds",
+            "refId": "A",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}
+      },
+      {
+        "id": 5,
+        "title": "AI Processing Latency",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "ai_ingest_latency_ms_bucket",
+            "refId": "A",
+            "legendFormat": "{{instance}} - {{le}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12}
+      },
+      {
+        "id": 6,
+        "title": "LLM Generation Time",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "llm_generate_seconds_bucket",
+            "refId": "A",
+            "legendFormat": "{{instance}} - {{le}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20}
+      },
+      {
+        "id": 7,
+        "title": "AI Summary Latency",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "ai_summary_latency_ms_bucket",
+            "refId": "A",
+            "legendFormat": "{{instance}} - {{le}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20}
+      },
+      {
+        "id": 8,
+        "title": "LLM Fallback Switches",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "llm_fallback_switch_total",
+            "refId": "A",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28}
+      }
+    ],
+    "time": {"from": "now-1h", "to": "now"},
+    "refresh": "5s"
+  }
+}

@@ -1,0 +1,92 @@
+openapi: 3.1.0
+info:
+  title: STT Service API (Private)
+  version: 1.0.0
+  description: Real-time transcription over WebSocket with partial/final events.
+servers:
+  - url: http://stt:8000
+security:
+  - bearerAuth: []
+tags:
+  - name: System
+  - name: STT
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    XSessionId: { name: X-Session-Id, in: header, required: true, schema: { type: string } }
+    XRequestId: { name: X-Request-Id, in: header, required: true, schema: { type: string } }
+    XCorrelationId: { name: X-Correlation-Id, in: header, required: true, schema: { type: string } }
+  schemas:
+    Error:
+      type: object
+      required: [code, message, correlation_id]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object, additionalProperties: true }
+        correlation_id: { type: string }
+paths:
+  /v1/transcribe/ws:
+    get:
+      tags: [STT]
+      summary: WebSocket endpoint (upgrade) for streaming transcription
+      description: |
+        **Non-normative WebSocket notes**
+        - Handshake: `GET /v1/transcribe/ws?session_id=...&correlation_id=...`
+        - Client → Server: binary audio frames (PCM16LE or OGG/Opus, 16kHz mono).
+        - Server → Client: text frames as JSON envelope `{ "event": string, "data": object }`.
+        - Events: `transcript.partial`, `transcript.final`, `warning`, `transcript.error`, `pong`.
+        - Example frames:
+          {"event":"transcript.partial","data":{"text":"hell","start_ms":0,"end_ms":360}}
+          {"event":"transcript.final","data":{"text":"hello world","segments":[{"text":"hello world","start_ms":0,"end_ms":920}]}}
+          {"event":"pong","data":{"ts":1724380000}}
+      parameters:
+        - $ref: "#/components/parameters/XSessionId"
+        - $ref: "#/components/parameters/XRequestId"
+        - $ref: "#/components/parameters/XCorrelationId"
+      responses:
+        "101": { description: Switching Protocols (WebSocket) }
+        "400":
+          description: Bad request
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }
+  /v1/health:
+    get:
+      tags: [System]
+      summary: Health
+      security: []
+      parameters: [ { $ref: "#/components/parameters/XRequestId" } ]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json: { schema: { type: object, example: { status: ok } } }
+  /v1/config:
+    get:
+      tags: [System]
+      summary: Config (engine, thresholds)
+      parameters: [ { $ref: "#/components/parameters/XSessionId" }, { $ref: "#/components/parameters/XRequestId" }, { $ref: "#/components/parameters/XCorrelationId" } ]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  primary: "openai/whisper"
+                  fallback: "faster-whisper"
+                  first_partial_sla_ms: 800
+                  stall_timeout_sec: 2.0
+  /v1/metrics:
+    get:
+      tags: [System]
+      summary: Prometheus metrics
+      security: []
+      parameters: [ { $ref: "#/components/parameters/XRequestId" } ]
+      responses:
+        "200":
+          description: Text
+          content:
+            text/plain: { schema: { type: string }, example: "stt_partial_latency_ms_sum 3456" }

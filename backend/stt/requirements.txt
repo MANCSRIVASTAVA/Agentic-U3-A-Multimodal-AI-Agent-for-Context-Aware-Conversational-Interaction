@@ -1,0 +1,21 @@
+fastapi==0.112.2
+uvicorn[standard]==0.30.6
+httpx==0.27.2
+websockets==12.0
+python-dotenv==1.0.1
+prometheus-client==0.20.0
+prometheus-fastapi-instrumentator==6.1.0
+
+# OpenTelemetry (keep these in lockstep)
+opentelemetry-sdk==1.26.0
+opentelemetry-exporter-otlp==1.26.0
+opentelemetry-instrumentation-fastapi==0.47b0
+
+# Speech stack
+faster-whisper==1.0.3
+ctranslate2==4.5.0          # pinned to match faster-whisper
+numpy==1.26.4               # avoid NumPy 2.x incompatibilities
+soundfile==0.12.1           # needs libsndfile1 at runtime
+
+# Faster JSON
+orjson==3.10.7

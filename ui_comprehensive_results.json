@@ -1,0 +1,82 @@
+{
+  "overall_success": true,
+  "total_duration": 1.2766437530517578,
+  "test_results": {
+    "ui_accessibility": {
+      "success": true,
+      "status_code": 200,
+      "content_type": "text/html",
+      "is_html": true,
+      "has_react_root": true,
+      "has_assets": true,
+      "response_size": 401
+    },
+    "api_proxy_functionality": {
+      "success": true,
+      "health_status": 200,
+      "chat_status": 200,
+      "health_response": {
+        "status": "ok"
+      },
+      "chat_response": {
+        "text": "",
+        "used_rag": false,
+        "provider": null
+      }
+    },
+    "ui_responsiveness": {
+      "success": true,
+      "status_code": 200,
+      "response_time": 0.002103090286254883,
+      "is_fast": true,
+      "is_acceptable": true
+    },
+    "ui_assets_loading": {
+      "success": true,
+      "css_assets_found": 1,
+      "js_assets_found": 1,
+      "css_assets_loaded": 1,
+      "js_assets_loaded": 1,
+      "css_assets": [
+        "/assets/index-BGVi6WGq.css"
+      ],
+      "js_assets": [
+        "/assets/index-DQaZ1bBh.js"
+      ]
+    },
+    "ui_error_handling": {
+      "success": true,
+      "not_found_status": 200,
+      "malformed_status": 400,
+      "handles_404": true,
+      "handles_malformed": true
+    },
+    "ui_cors_headers": {
+      "success": true,
+      "options_status": 200,
+      "post_status": 200,
+      "cors_headers": {
+        "access_control_allow_origin": "http://localhost:3000",
+        "access_control_allow_methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT",
+        "access_control_allow_headers": "Content-Type"
+      },
+      "has_cors": true,
+      "cors_working": true
+    },
+    "ui_chat_workflow": {
+      "success": true,
+      "status_code": 200,
+      "response": {
+        "text": "",
+        "used_rag": false,
+        "provider": null
+      },
+      "has_text": true,
+      "has_provider": true
+    }
+  },
+  "summary": {
+    "successful_tests": 7,
+    "total_tests": 7
+  }
+}

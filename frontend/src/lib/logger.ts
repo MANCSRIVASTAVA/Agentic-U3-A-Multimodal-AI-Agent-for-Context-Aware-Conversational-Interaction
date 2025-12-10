@@ -1,0 +1,1 @@
+export const log = (...args:any[])=>{ if(import.meta.env.DEV) console.log('[app]',...args)}

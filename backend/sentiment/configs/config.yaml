@@ -1,0 +1,7 @@
+service_name: sentiment
+port: 8000
+cors_allow_origins: "*"
+timeouts_ms:
+  analyze: 800
+thresholds:
+  min_confidence: 0.6

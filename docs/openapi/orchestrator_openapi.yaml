@@ -1,0 +1,322 @@
+openapi: 3.1.0
+info:
+  title: Orchestrator
+  version: 1.0.0
+paths:
+  /v1/health:
+    get:
+      summary: Health
+      operationId: health_v1_health_get
+      parameters:
+      - name: deep
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Deep
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/config:
+    get:
+      summary: Get Config
+      operationId: get_config_v1_config_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigResponse'
+  /v1/metrics:
+    get:
+      summary: Prometheus Metrics
+      operationId: prometheus_metrics_v1_metrics_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /v1/chat:
+    post:
+      tags:
+      - chat
+      summary: Chat Sync
+      description: 'Optional sync mode:
+
+        - If use_rag flag (or query length over threshold) -> fetch snippets from
+        RAG
+
+        - Call LLM (still streamed internally), collect into a final string and return
+        JSON'
+      operationId: chat_sync_v1_chat_post
+      parameters:
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/chat/stream:
+    get:
+      tags:
+      - chat
+      summary: Chat Stream
+      description: "SSE endpoint:\n- GET /v1/chat/stream?q=...&use_rag=true|false\n\
+        - Pipes events from LLM service:\n  * llm.token {delta}\n  * llm.done  {model,provider,usage,fallback_used}\n\
+        \  * error     {code,message,details}\n- If RAG used, appends provenance to\
+        \ llm.done"
+      operationId: chat_stream_v1_chat_stream_get
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Q
+      - name: use_rag
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Use Rag
+      - name: authorization
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Authorization
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/chat/sse:
+    get:
+      summary: Chat Sse
+      operationId: chat_sse_v1_chat_sse_get
+      parameters:
+      - name: text
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Text
+      - name: voice
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Voice
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/ingest:
+    post:
+      summary: Ingest
+      operationId: ingest_v1_ingest_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: true
+              type: object
+              title: Payload
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/retrieve:
+    get:
+      summary: Retrieve
+      operationId: retrieve_v1_retrieve_get
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Q
+      - name: top_k
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 3
+          title: Top K
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/tts:
+    post:
+      summary: Tts
+      operationId: tts_v1_tts_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: true
+              type: object
+              title: Payload
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    ConfigResponse:
+      properties:
+        service:
+          type: string
+          title: Service
+          default: orchestrator
+        port:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Port
+          default: 8000
+        downstreams:
+          $ref: '#/components/schemas/Downstreams'
+      type: object
+      required:
+      - downstreams
+      title: ConfigResponse
+    Downstreams:
+      properties:
+        rag:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Rag
+          default: http://rag:8000
+        llm:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Llm
+          default: http://llm:8000
+        stt:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Stt
+          default: ws://stt:8010
+        tts:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tts
+          default: http://tts:8000
+        analytics:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Analytics
+          default: http://analytics:8000
+      type: object
+      title: Downstreams
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+

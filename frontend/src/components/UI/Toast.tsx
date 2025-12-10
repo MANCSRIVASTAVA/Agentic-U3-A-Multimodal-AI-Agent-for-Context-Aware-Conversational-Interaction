@@ -1,0 +1,1 @@
+export function Toast({text}:{text:string}){ return <div className='banner'>{text}</div> }
